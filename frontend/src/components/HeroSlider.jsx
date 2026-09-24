@@ -2,11 +2,24 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { photos, gamePhoto, isCutout, TAGLINES } from '../assets/photos';
 import { fromPrice } from '../hooks/useCatalog';
+import { current, isOut, releaseTime } from '../content/upcoming';
+import PromoArt from './PromoArt';
+import Countdown from './Countdown';
 
 const INTERVAL = 6500;
 
 /* Slide 1 is the lounge itself; the rest are built from the live catalog so
    names and prices always match what staff set in the dashboard. */
+const fmtDate = r => new Date(releaseTime(r)).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Karachi' });
+
+function promoSlide(r) {
+  const out = isOut(r);
+  return {
+    key: `promo-${r.id}`, promo: r, eyebrow: out ? `Out now · ${r.platforms}` : `Coming soon · ${fmtDate(r)}`,
+    title: <><span>{r.title}</span></>, text: r.tagline,
+  };
+}
+
 function buildSlides(catalog) {
   const name = catalog?.settings?.name || 'GameBreak';
   const intro = {
@@ -22,7 +35,9 @@ function buildSlides(catalog) {
       text: g.description || TAGLINES[img],
     };
   });
-  return [intro, ...games];
+  const promos = current().filter(r => !isOut(r)).sort((a, b) => (b.featured ? 1 : 0) - (a.featured ? 1 : 0));
+  const [lead, ...rest] = promos.map(promoSlide);
+  return [lead, intro, ...games, ...rest.slice(0, 1)].filter(Boolean);
 }
 
 export default function HeroSlider({ catalog }) {
@@ -60,20 +75,23 @@ export default function HeroSlider({ catalog }) {
       }}
     >
       {slides.map((s, k) => {
-        const cut = isCutout(s.img);
+        const cut = !s.promo && isCutout(s.img);
         return (
-          <div key={s.key} className={`hs-slide${k === i ? ' on' : ''}${cut ? ' cut' : ''}`} aria-hidden={k !== i} role="group" aria-roledescription="slide" aria-label={`${k + 1} of ${n}`}>
-            {cut
-              ? <div className="hs-stage"><img src={s.img} alt="" className="hs-product" /></div>
+          <div key={s.key} className={`hs-slide${k === i ? ' on' : ''}${cut ? ' cut' : ''}${s.promo ? ` promo promo-${s.promo.theme}` : ''}`} aria-hidden={k !== i} role="group" aria-roledescription="slide" aria-label={`${k + 1} of ${n}`}>
+            {s.promo ? (Math.min((k - i + n) % n, (i - k + n) % n) <= 1 ? <PromoArt theme={s.promo.theme} /> : null)
+              : cut ? <div className="hs-stage"><img src={s.img} alt="" className="hs-product" /></div>
               : <img src={s.img} alt="" className="hs-bg" loading={k === 0 ? 'eager' : 'lazy'} />}
             <div className="hs-shade" />
             <div className="wrap hs-content">
               <p className="hs-eyebrow">{s.eyebrow}</p>
               <h1 className="hs-title">{s.title}</h1>
               <p className="hs-text">{s.text}</p>
+              {s.promo && !isOut(s.promo) && <div><Countdown to={releaseTime(s.promo)} /><p className="hs-plat">{s.promo.platforms}</p></div>}
               <div className="hero-actions hs-actions">
-                <Link className="btn pri lg" to="/book" state={s.gameId ? { gameId: s.gameId } : undefined} tabIndex={k === i ? 0 : -1}>Book a Session</Link>
-                <Link className="btn ghost lg" to={s.gameId ? '/pricing' : '/games'} tabIndex={k === i ? 0 : -1}>{s.gameId ? 'See prices' : 'Explore games'}</Link>
+                <Link className="btn pri lg" to="/book" state={s.gameId ? { gameId: s.gameId } : undefined} tabIndex={k === i ? 0 : -1}>{s.promo ? 'Book launch week' : 'Book a Session'}</Link>
+                {s.promo
+                  ? <a className="btn ghost lg" href="#coming-soon" tabIndex={k === i ? 0 : -1}>All upcoming games</a>
+                  : <Link className="btn ghost lg" to={s.gameId ? '/pricing' : '/games'} tabIndex={k === i ? 0 : -1}>{s.gameId ? 'See prices' : 'Explore games'}</Link>}
               </div>
             </div>
           </div>

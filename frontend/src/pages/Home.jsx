@@ -7,6 +7,9 @@ import GameCard from '../components/GameCard';
 import Reveal from '../components/Reveal';
 import CountUp from '../components/CountUp';
 import { photos } from '../assets/photos';
+import PromoArt from '../components/PromoArt';
+import Countdown from '../components/Countdown';
+import { current, isOut, releaseTime } from '../content/upcoming';
 
 const STEPS = [
   ['Pick your game', 'PS5, PC, racing sim — choose what you feel like playing.'],
@@ -60,6 +63,32 @@ export default function Home() {
           </Reveal>
           <div className="grid gcard-grid">
             {games.map((g, k) => <Reveal key={g._id} delay={k * 90}><GameCard game={g} /></Reveal>)}
+          </div>
+        </section>
+      )}
+
+      {current().length > 0 && (
+        <section className="wrap" id="coming-soon">
+          <Reveal className="sec-head">
+            <p className="eyebrow">Release radar</p>
+            <h2 className="sec-title">Coming soon & just released</h2>
+            <p className="sec-sub">The big launches we're counting down to. Book your launch-week session early — they fill up fast.</p>
+          </Reveal>
+          <div className="grid up-grid">
+            {current().map((r, k) => {
+              const out = isOut(r);
+              return (
+                <Reveal key={r.id} delay={k * 90} className={`up-card${r.featured ? ' featured' : ''}`}>
+                  <div className="up-art"><PromoArt theme={r.theme} /></div>
+                  <div className="up-body">
+                    <span className={`up-badge${out ? ' out' : ''}`}>{out ? 'Out now' : 'Coming soon'}</span>
+                    <h3>{r.title}</h3>
+                    <p className="up-meta">{new Date(releaseTime(r)).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Karachi' })} · {r.platforms}</p>
+                    {out ? <p className="up-tag">{r.tagline}</p> : <Countdown to={releaseTime(r)} compact />}
+                  </div>
+                </Reveal>
+              );
+            })}
           </div>
         </section>
       )}
