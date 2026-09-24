@@ -17,6 +17,8 @@ const STEPS = [
   ['Show up & play', 'Your station is ready when you arrive. No waiting around.'],
 ];
 
+function fmtHour(h) { const hh = h % 24; return `${hh % 12 || 12} ${hh < 12 ? 'AM' : 'PM'}`; }
+
 function cheapest(games) {
   const all = games.flatMap(g => g.weekday?.method === 'session' ? g.weekday.pk.map(p => p.p)
     : g.weekday?.method === 'minute' ? [g.weekday.rate * 60] : []);
@@ -148,6 +150,35 @@ export default function Home() {
             })}
           </div>
           <Reveal className="center" style={{ marginTop: 20 }}><Link className="btn ghost" to="/events">All events →</Link></Reveal>
+        </section>
+      )}
+
+      {s && (s.address || s.phone) && (
+        <section className="wrap">
+          <Reveal className="sec-head center">
+            <p className="eyebrow">Find us</p>
+            <h2 className="sec-title">Visit {s.name}</h2>
+          </Reveal>
+          <div className="grid visit-grid">
+            {s.address && (
+              <Reveal className="visit-card" delay={0}>
+                <span className="visit-ic">📍</span><h3>Address</h3><p>{s.address}</p>
+                <a className="visit-link" href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(s.address)}`} target="_blank" rel="noopener noreferrer">Open in Google Maps →</a>
+              </Reveal>
+            )}
+            {s.phone && (
+              <Reveal className="visit-card" delay={90}>
+                <span className="visit-ic">📞</span><h3>Call us</h3>
+                <p>{s.contactName && <>{s.contactName}<br /></>}<a href={`tel:${s.phone.replace(/[^\d+]/g, '')}`} className="visit-phone">{s.phone}</a></p>
+                <a className="visit-link" href={`https://wa.me/92${s.phone.replace(/\D/g, '').replace(/^0/, '')}`} target="_blank" rel="noopener noreferrer">Message on WhatsApp →</a>
+              </Reveal>
+            )}
+            <Reveal className="visit-card" delay={180}>
+              <span className="visit-ic">🕙</span><h3>Opening hours</h3>
+              <p>Every day<br /><b className="visit-hours">{fmtHour(s.open)} – {fmtHour(s.close)}</b></p>
+              <Link className="visit-link" to="/book">Book a session →</Link>
+            </Reveal>
+          </div>
         </section>
       )}
 
