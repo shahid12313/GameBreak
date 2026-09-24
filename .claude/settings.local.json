@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm -v)",
+      "Bash(curl -s -H 'Origin: http://localhost:5173' -D - localhost:5001/api/public/catalog)"
+    ]
+  }
+}
