@@ -6,6 +6,9 @@ const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
 app.disable('x-powered-by');
+/* Behind a hosting proxy (Vercel, Render), trust its X-Forwarded-For so the
+   login rate limiters see each visitor's real IP instead of the proxy's. */
+if (process.env.VERCEL || process.env.RENDER) app.set('trust proxy', 1);
 app.use(express.json({ limit: '1mb' }));
 
 /* Explicit allow-list only — never "*" — per the security requirement.
