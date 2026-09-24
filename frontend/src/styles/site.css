@@ -407,3 +407,6 @@ html{scroll-behavior:smooth}
 .visit-link{font-size:13.5px;font-weight:600;color:var(--cyan)}
 .visit-link:hover{color:var(--neon)}
 .nav-links{margin-left:auto}
+.contact-grid{grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:18px}
+.contact-big{display:flex;flex-direction:column;gap:2px;font:700 18px var(--f-disp);color:var(--tx)!important}
+.contact-actions{display:flex;gap:8px;flex-wrap:wrap}

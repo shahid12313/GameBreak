@@ -168,7 +168,7 @@ export default function Home() {
             )}
             {s.phone && (
               <Reveal className="visit-card" delay={90}>
-                <span className="visit-ic">📞</span><h3>Call us</h3>
+                <span className="visit-ic">📞</span><h3>Call the owners</h3>
                 <p>{s.contactName && <>{s.contactName}<br /></>}<a href={`tel:${s.phone.replace(/[^\d+]/g, '')}`} className="visit-phone">{s.phone}</a></p>
                 <a className="visit-link" href={`https://wa.me/92${s.phone.replace(/\D/g, '').replace(/^0/, '')}`} target="_blank" rel="noopener noreferrer">Message on WhatsApp →</a>
               </Reveal>
