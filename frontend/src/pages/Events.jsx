@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react';
 import api, { apiErrorMessage } from '../services/api';
 import { Loading, EmptyState } from '../components/LoadingState';
+import PageHeader from '../components/PageHeader';
+import Reveal from '../components/Reveal';
+import { photos } from '../assets/photos';
 
 const money = n => 'PKR ' + Math.round(n).toLocaleString('en-US');
 
@@ -10,14 +13,14 @@ export default function Events() {
   useEffect(() => { api.get('/public/events').then(r => setList(r.data)).catch(() => setList([])); }, []);
 
   return (
-    <section className="wrap" style={{ paddingTop: 40 }}>
-      <h1 className="sec-title">Events</h1>
-      <p className="sec-sub">Tournaments and watch parties — everyone's welcome.</p>
+    <>
+    <PageHeader img={photos.crowd} eyebrow="Compete & hang out" title="Events">Tournaments and watch parties — everyone's welcome.</PageHeader>
+    <section className="wrap">
       {!list && <Loading />}
       {list && !list.length && <EmptyState>No events scheduled right now — check back soon.</EmptyState>}
       <div className="grid grid-2">
         {list?.map(ev => (
-          <div className="card" key={ev._id}>
+          <Reveal className="card ev-item" key={ev._id}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <div>
                 <b>{ev.title}</b> {ev.starred && <span className="tag warn">★ featured</span>}
@@ -26,11 +29,12 @@ export default function Events() {
               </div>
               {ev.full ? <span className="tag bad">Full</span> : <button className="btn sm pri" onClick={() => setRegFor(ev)}>Register</button>}
             </div>
-          </div>
+          </Reveal>
         ))}
       </div>
       {regFor && <RegisterModal event={regFor} onClose={() => setRegFor(null)} />}
     </section>
+    </>
   );
 }
 
@@ -43,8 +47,8 @@ function RegisterModal({ event, onClose }) {
     catch (ex) { setErr(apiErrorMessage(ex)); } finally { setBusy(false); }
   }
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(2,6,8,.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16, zIndex: 60 }} onMouseDown={e => e.target === e.currentTarget && onClose()}>
-      <div className="card" style={{ maxWidth: 380, width: '100%' }}>
+    <div className="modal-back" style={{ position: 'fixed', inset: 0, background: 'rgba(2,6,8,.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16, zIndex: 60 }} onMouseDown={e => e.target === e.currentTarget && onClose()}>
+      <div className="card modal-box" style={{ maxWidth: 380, width: '100%' }}>
         <h3 style={{ marginBottom: 10 }}>Register · {event.title}</h3>
         {done ? <><p className="ok-text">You're registered! See you there.</p><button className="btn pri block" onClick={onClose}>Close</button></> : (
           <form onSubmit={submit}>

@@ -1,46 +1,133 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../services/api';
+import useCatalog, { money } from '../hooks/useCatalog';
+import HeroSlider from '../components/HeroSlider';
+import GameCard from '../components/GameCard';
+import Reveal from '../components/Reveal';
+import CountUp from '../components/CountUp';
+import { photos } from '../assets/photos';
+
+const STEPS = [
+  ['Pick your game', 'PS5, PC, racing sim — choose what you feel like playing.'],
+  ['Choose a time', 'See live availability and grab an open slot in seconds.'],
+  ['Show up & play', 'Your station is ready when you arrive. No waiting around.'],
+];
+
+function cheapest(games) {
+  const all = games.flatMap(g => g.weekday?.method === 'session' ? g.weekday.pk.map(p => p.p)
+    : g.weekday?.method === 'minute' ? [g.weekday.rate * 60] : []);
+  return all.length ? Math.min(...all) : null;
+}
 
 export default function Home() {
-  const [catalog, setCatalog] = useState(null);
-  useEffect(() => { api.get('/public/catalog').then(r => setCatalog(r.data)).catch(() => {}); }, []);
+  const catalog = useCatalog();
+  const [events, setEvents] = useState([]);
+  useEffect(() => { api.get('/public/events').then(r => setEvents(r.data.slice(0, 3))).catch(() => {}); }, []);
+
+  const games = catalog?.games || [];
+  const s = catalog?.settings;
+  const stations = games.reduce((n, g) => n + (g.stations || 0), 0);
+  const hours = s ? s.close - s.open : null;
+  const low = cheapest(games);
 
   return (
     <div>
-      <section className="hero wrap">
-        <h1>Your next <span>gaming session</span> starts here</h1>
-        <p>{catalog?.settings?.name || 'GameBreak'} — PS5, PC, racing simulators and more. Book online in under a minute, or just walk in.</p>
-        <div className="hero-actions">
-          <Link className="btn pri" to="/book">Book a Session</Link>
-          <Link className="btn" to="/games">See our games</Link>
-        </div>
-      </section>
+      <HeroSlider catalog={catalog} />
 
-      {catalog?.games?.length > 0 && (
+      {catalog && (
+        <section className="wrap stats">
+          {[
+            [games.length, '', '', 'Ways to play'],
+            [stations, '', '', 'Gaming stations'],
+            hours && [hours, '', 'h', 'Open every day'],
+            low && [low, `${s?.currency || 'PKR'} `, '', 'Sessions from'],
+          ].filter(Boolean).map(([n, pre, suf, label], k) => (
+            <Reveal className="stat" key={label} delay={k * 90}>
+              <b><CountUp to={n} prefix={pre} suffix={suf} /></b>
+              <span>{label}</span>
+            </Reveal>
+          ))}
+        </section>
+      )}
+
+      {games.length > 0 && (
         <section className="wrap">
-          <h2 className="sec-title">Popular right now</h2>
-          <p className="sec-sub">A taste of what's on offer — see the full lineup on the Games page.</p>
-          <div className="grid grid-3">
-            {catalog.games.slice(0, 3).map(g => (
-              <div className="card game-card" key={g._id}>
-                <div className="ic">{g.icon}</div>
-                <b>{g.name}</b>
-                {g.weekday?.method === 'session' && g.weekday.pk?.[0] && <div className="price">from PKR {Math.min(...g.weekday.pk.map(p => p.p))}</div>}
-                {g.weekday?.method === 'minute' && <div className="price">PKR {g.weekday.rate * 60}/hour</div>}
-              </div>
-            ))}
+          <Reveal className="sec-head">
+            <p className="eyebrow">The lineup</p>
+            <h2 className="sec-title">Choose your battlestation</h2>
+            <p className="sec-sub">Every setup is maintained, cleaned and ready between sessions.</p>
+          </Reveal>
+          <div className="grid gcard-grid">
+            {games.map((g, k) => <Reveal key={g._id} delay={k * 90}><GameCard game={g} /></Reveal>)}
           </div>
         </section>
       )}
 
       <section className="wrap">
-        <h2 className="sec-title">Why GameBreak</h2>
-        <div className="grid grid-3">
-          <div className="card"><b>⚡ Book in seconds</b><p className="c-mut">Pick a game, a time, and you're set — no app to install.</p></div>
-          <div className="card"><b>🎯 Real prices, no surprises</b><p className="c-mut">See exactly what a session costs before you book.</p></div>
-          <div className="card"><b>🏆 Events every week</b><p className="c-mut">Tournaments and watch parties — check the Events page.</p></div>
-        </div>
+        <Reveal className="sec-head center">
+          <p className="eyebrow">How it works</p>
+          <h2 className="sec-title">From couch to controller in 3 steps</h2>
+        </Reveal>
+        <ol className="steps">
+          {STEPS.map(([t, d], k) => (
+            <Reveal as="li" key={t} delay={k * 120} className="step">
+              <span className="step-n">{String(k + 1).padStart(2, '0')}</span>
+              <h3>{t}</h3>
+              <p>{d}</p>
+            </Reveal>
+          ))}
+        </ol>
+      </section>
+
+      <section className="wrap split">
+        <Reveal className="split-media">
+          <img src={photos.sim} alt="A player racing in a simulator cockpit with a steering wheel" loading="lazy" />
+          <span className="split-badge">🏎️ Real racing rig</span>
+        </Reveal>
+        <Reveal className="split-copy" delay={120}>
+          <p className="eyebrow">Why {s?.name || 'GameBreak'}</p>
+          <h2 className="sec-title">Built for serious play</h2>
+          <ul className="ticks">
+            <li><b>Book in seconds</b> — pick a game and a time, no app to install.</li>
+            <li><b>Real prices, no surprises</b> — see exactly what a session costs up front.</li>
+            <li><b>Top-tier gear</b> — next-gen consoles, high-refresh PCs, a full sim rig.</li>
+            <li><b>Events every week</b> — tournaments and watch parties for every level.</li>
+          </ul>
+          <Link className="btn pri lg" to="/book">Reserve your spot</Link>
+        </Reveal>
+      </section>
+
+      {events.length > 0 && (
+        <section className="wrap">
+          <Reveal className="sec-head">
+            <p className="eyebrow">Coming up</p>
+            <h2 className="sec-title">Events & tournaments</h2>
+          </Reveal>
+          <div className="grid ev-grid">
+            {events.map((ev, k) => {
+              const d = new Date(ev.t);
+              return (
+                <Reveal key={ev._id} delay={k * 90} className="ev-card">
+                  <div className="ev-date"><b>{d.getDate()}</b><span>{d.toLocaleDateString('en-GB', { month: 'short' })}</span></div>
+                  <div>
+                    <h3>{ev.title} {ev.starred && <span className="tag warn">★</span>}</h3>
+                    <p className="c-mut">{d.toLocaleDateString('en-GB', { weekday: 'long' })} · {d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} · {ev.fee ? money(ev.fee) : 'Free entry'}</p>
+                  </div>
+                </Reveal>
+              );
+            })}
+          </div>
+          <Reveal className="center" style={{ marginTop: 20 }}><Link className="btn ghost" to="/events">All events →</Link></Reveal>
+        </section>
+      )}
+
+      <section className="wrap">
+        <Reveal className="cta" style={{ '--cta-img': `url(${photos.pc})` }}>
+          <h2>Ready to play?</h2>
+          <p>Lock in your station now — it takes less than a minute.</p>
+          <Link className="btn pri lg" to="/book">Book a Session</Link>
+        </Reveal>
       </section>
     </div>
   );

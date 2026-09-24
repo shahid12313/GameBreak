@@ -13,6 +13,7 @@ import CustomerLogin from './pages/CustomerLogin';
 import CustomerRegister from './pages/CustomerRegister';
 import CustomerAccount from './pages/CustomerAccount';
 import MyBookings from './pages/MyBookings';
+import Credits from './pages/Credits';
 import NotFound from './pages/NotFound';
 
 export default function App() {
@@ -33,6 +34,7 @@ export default function App() {
             <Route path="/register" element={<CustomerRegister />} />
             <Route path="/account" element={<CustomerAccount />} />
             <Route path="/my-bookings" element={<MyBookings />} />
+            <Route path="/credits" element={<Credits />} />
             <Route path="*" element={<NotFound />} />
           </Route>
         </Routes>
