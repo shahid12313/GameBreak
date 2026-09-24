@@ -70,6 +70,7 @@ export default function SiteLayout() {
           </div>
           <div>
             <h4>Visit</h4>
+            {s?.contactName && <span>{s.contactName}</span>}
             {s?.address && <span>{s.address}</span>}
             {s && <span>Open daily {fmtHour(s.open)} – {fmtHour(s.close)}</span>}
             {s?.phone && <span>{s.phone}</span>}

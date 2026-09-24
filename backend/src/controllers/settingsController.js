@@ -9,15 +9,15 @@ exports.get = async (req, res) => {
   // any prior save) has created the real document, so it's worth being
   // explicit here rather than relying on the model's own default-document
   // construction behaving a particular way.
-  res.json(s || { _id: 'main', name: 'GameBreak', address: '', phone: '', email: '', logoUrl: '', currency: 'PKR', taxPercent: 0, open: 10, close: 26, bookingLeadMinutes: 15 });
+  res.json(s || { _id: 'main', name: 'GameBreak', contactName: '', address: '', phone: '', email: '', logoUrl: '', currency: 'PKR', taxPercent: 0, open: 10, close: 26, bookingLeadMinutes: 15 });
 };
 
 exports.update = async (req, res) => {
-  const { name, address, phone, email, logoUrl, currency, taxPercent, open, close, bookingLeadMinutes } = req.body || {};
+  const { name, contactName, address, phone, email, logoUrl, currency, taxPercent, open, close, bookingLeadMinutes } = req.body || {};
   if (name !== undefined && !String(name).trim()) throw httpError(400, 'Enter a business name.');
   if (open !== undefined && close !== undefined && !(Number(close) > Number(open))) throw httpError(400, 'Closing hour must be later than opening hour.');
   const s = await BusinessSettings.findByIdAndUpdate('main',
-    { $set: pick({ name, address, phone, email, logoUrl, currency, taxPercent, open, close, bookingLeadMinutes }) },
+    { $set: pick({ name, contactName, address, phone, email, logoUrl, currency, taxPercent, open, close, bookingLeadMinutes }) },
     { new: true, upsert: true }
   );
   res.json(s);

@@ -16,7 +16,7 @@ export default function Settings() {
     e.preventDefault(); setBusy(true);
     try {
       const res = await api.put('/settings', {
-        name: data.name, address: data.address, phone: data.phone, email: data.email,
+        name: data.name, contactName: data.contactName || '', address: data.address, phone: data.phone, email: data.email,
         currency: data.currency, taxPercent: Number(data.taxPercent) || 0,
         open: Number(data.open), close: Number(data.close), bookingLeadMinutes: Number(data.bookingLeadMinutes) || 0
       });
@@ -35,6 +35,7 @@ export default function Settings() {
       <p className="page-sub">Business details shown on the public site and receipts</p>
       <form className="card" style={{ maxWidth: 480 }} onSubmit={submit}>
         <label className="f"><span>Business name</span><input className="inp" required value={data.name} onChange={e => set('name', e.target.value)} /></label>
+        <label className="f"><span>Contact person</span><input className="inp" maxLength={60} value={data.contactName || ''} onChange={e => set('contactName', e.target.value)} /></label>
         <label className="f"><span>Address</span><input className="inp" value={data.address} onChange={e => set('address', e.target.value)} /></label>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
           <label className="f"><span>Phone</span><input className="inp" value={data.phone} onChange={e => set('phone', e.target.value)} /></label>

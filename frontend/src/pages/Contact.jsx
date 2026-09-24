@@ -12,8 +12,9 @@ export default function Contact() {
     <section className="wrap" style={{ maxWidth: 620 }}>
       <div className="card glow">
         <dl style={{ display: 'grid', gridTemplateColumns: '90px 1fr', rowGap: 10, margin: 0 }}>
-          <dt className="c-mut">Address</dt><dd style={{ margin: 0 }}>{settings?.address || 'Add your address in Settings'}</dd>
-          <dt className="c-mut">Phone</dt><dd style={{ margin: 0 }}>{settings?.phone || '—'}</dd>
+          {settings?.contactName && <><dt className="c-mut">Contact</dt><dd style={{ margin: 0 }}>{settings.contactName}</dd></>}
+          <dt className="c-mut">Address</dt><dd style={{ margin: 0 }}>{settings?.address || '—'}</dd>
+          <dt className="c-mut">Phone</dt><dd style={{ margin: 0 }}>{settings?.phone ? <a href={`tel:${settings.phone.replace(/[^\d+]/g, '')}`} style={{ color: 'var(--neon)' }}>{settings.phone}</a> : '—'}</dd>
           <dt className="c-mut">Email</dt><dd style={{ margin: 0 }}>{settings?.email || '—'}</dd>
           <dt className="c-mut">Hours</dt><dd style={{ margin: 0 }}>{settings ? `${fmtHour(settings.open)} – ${fmtHour(settings.close)}, every day` : '—'}</dd>
         </dl>
@@ -22,4 +23,4 @@ export default function Contact() {
     </>
   );
 }
-function fmtHour(h) { const hh = h % 24; const period = hh < 12 ? 'AM' : 'PM'; const h12 = hh % 12 || 12; return `${h12}${h >= 24 ? ' (next day)' : ''} ${period}`; }
+function fmtHour(h) { const hh = h % 24; const period = hh < 12 ? 'AM' : 'PM'; const h12 = hh % 12 || 12; return `${h12} ${period}${h >= 24 ? ' (next day)' : ''}`; }

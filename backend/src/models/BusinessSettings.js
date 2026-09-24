@@ -6,6 +6,7 @@ const BusinessSettingsSchema = new Schema(
   {
     _id: { type: String, default: 'main' },
     name: { type: String, default: 'GameBreak', maxlength: 60 },
+    contactName: { type: String, default: '', maxlength: 60 },
     address: { type: String, default: '', maxlength: 160 },
     phone: { type: String, default: '', maxlength: 30 },
     email: { type: String, default: '', maxlength: 80 },
