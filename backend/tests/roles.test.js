@@ -56,6 +56,16 @@ test('a disabled staff account is rejected even with a previously-valid token', 
   await request(app).put(`/api/staff/${staff.id}`).set('Authorization', `Bearer ${owner.token}`).send({ active: false });
   const me = await request(app).get('/api/auth/me').set('Authorization', `Bearer ${staff.token}`);
   expect(me.status).toBe(401);
+  const games = await request(app).get('/api/games').set('Authorization', `Bearer ${staff.token}`);
+  expect(games.status).toBe(401);
+});
+
+test('a role change takes effect without signing in again', async () => {
+  const owner = await bootstrapOwner(app);
+  const admin2 = await addStaff(app, owner.token, { email: 'demoted@test.com', role: 'Admin' });
+  expect((await request(app).get('/api/revenue/summary').set('Authorization', `Bearer ${admin2.token}`)).status).not.toBe(403);
+  await request(app).put(`/api/staff/${admin2.id}`).set('Authorization', `Bearer ${owner.token}`).send({ role: 'Staff' });
+  expect((await request(app).get('/api/revenue/summary').set('Authorization', `Bearer ${admin2.token}`)).status).toBe(403);
 });
 
 test('an expired/garbage token is rejected, not crashed on', async () => {

@@ -14,6 +14,9 @@ module.exports = {
   mongoUri: process.env.MONGO_URI,
   jwtSecret: process.env.JWT_SECRET,
   nodeEnv: process.env.NODE_ENV || 'development',
+  /* The lounge's own time zone, used for opening hours, weekend pricing and
+     time-limited discount codes (the server itself runs on UTC). */
+  businessTz: process.env.BUSINESS_TZ || 'Asia/Karachi',
   /* Comma-separated list, e.g. "https://example.com,https://admin.example.com".
      Never falls back to "*" once this is set, per the security requirement that
      production CORS must be an explicit allow-list, not a wildcard. */

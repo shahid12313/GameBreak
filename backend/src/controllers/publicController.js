@@ -1,25 +1,29 @@
 'use strict';
-const { Game, Station, BusinessSettings, Event, EventRegistration, Booking, WaitingList, DiscountCode, Customer } = require('../models');
+const { Game, Station, BusinessSettings, Event, EventRegistration, Booking, WaitingList, DiscountCode } = require('../models');
 const { httpError } = require('../middleware/errorHandler');
-const { resolveGamePricing } = require('../utils/pricing');
+const { resolveGamePricing, resolveFromRows, activePricingByGame } = require('../utils/pricing');
 const billing = require('../utils/billing');
 const { nextBookingRef } = require('../utils/bookingRef');
 const { priceFor, isFull } = require('./bookingController');
 
 exports.catalog = async (req, res) => {
-  const [settings, games, stations] = await Promise.all([
+  // Everything in one parallel round trip — each trip to the database is slow.
+  const [settings, games, stations, pricing] = await Promise.all([
     BusinessSettings.findById('main').lean(),
     Game.find({ active: true }).sort({ name: 1 }).lean(),
-    Station.find().lean()
+    Station.find().lean(),
+    activePricingByGame()
   ]);
   const stationCount = {};
   stations.forEach(s => { stationCount[s.gameId] = (stationCount[s.gameId] || 0) + 1; });
-  const games2 = [];
-  for (const g of games) {
-    const weekday = await resolveGamePricing(g._id, new Date(2026, 0, 5)); // a Monday
-    const weekend = await resolveGamePricing(g._id, new Date(2026, 0, 3)); // a Saturday
-    games2.push({ ...g, stations: stationCount[g._id] || 0, weekday, weekend });
-  }
+  const games2 = games.map(g => {
+    const rows = pricing[String(g._id)] || [];
+    return {
+      ...g, stations: stationCount[g._id] || 0,
+      weekday: resolveFromRows(rows, new Date(2026, 0, 5)), // a Monday
+      weekend: resolveFromRows(rows, new Date(2026, 0, 3))  // a Saturday
+    };
+  });
   res.json({ settings: settings || { name: 'GameBreak', open: 10, close: 26, currency: 'PKR' }, games: games2 });
 };
 
@@ -54,12 +58,18 @@ exports.createBooking = async (req, res) => {
   if (isNaN(when.getTime()) || when.getTime() < now + 10 * 60000) throw httpError(400, 'Please choose a time at least 10 minutes from now.');
   if (when.getTime() > now + 60 * 86400000) throw httpError(400, 'Bookings open up to 60 days ahead.');
 
-  const resolved = await resolveGamePricing(game._id, when);
+  // Independent lookups run together — each trip to the database is slow.
+  const [resolved, stationCount, pendingCount] = await Promise.all([
+    resolveGamePricing(game._id, when),
+    Station.countDocuments({ gameId: game._id }),
+    Booking.countDocuments({ phone: String(phone).trim(), status: 'pending' })
+  ]);
   if (!resolved) throw httpError(400, 'This game has no active pricing right now.');
   const basePrice = priceFor(resolved, Number(durationMinutes));
   if (basePrice == null) throw httpError(400, 'Please choose one of the listed durations.');
+  // Cap: a phone number with 3+ bookings already awaiting confirmation can't spam more.
+  if (pendingCount >= 3) throw httpError(429, 'You already have 3 bookings waiting for confirmation.');
 
-  const stationCount = await Station.countDocuments({ gameId: game._id });
   if (await isFull(game._id, when, Number(durationMinutes), stationCount)) {
     throw httpError(409, 'That time is already fully booked. Please pick another slot.');
   }
@@ -74,10 +84,6 @@ exports.createBooking = async (req, res) => {
     await DiscountCode.updateOne({ _id: code._id }, { $inc: { used: 1 } });
   }
 
-  // Cap: a phone number with 3+ bookings already awaiting confirmation can't spam more.
-  const pendingCount = await Booking.countDocuments({ phone: String(phone).trim(), status: 'pending' });
-  if (pendingCount >= 3) throw httpError(429, 'You already have 3 bookings waiting for confirmation.');
-
   const booking = await Booking.create({
     ref: await nextBookingRef(), customerId: req.customer ? req.customer.sub : null,
     name: String(name).trim(), phone: String(phone).trim(), email: (email || '').trim(),
@@ -88,8 +94,10 @@ exports.createBooking = async (req, res) => {
 };
 
 exports.events = async (req, res) => {
-  const events = await Event.find({ t: { $gte: new Date(Date.now() - 86400000) } }).sort({ t: 1 }).lean();
-  const counts = await EventRegistration.aggregate([{ $group: { _id: '$eventId', n: { $sum: 1 } } }]);
+  const [events, counts] = await Promise.all([
+    Event.find({ t: { $gte: new Date(Date.now() - 86400000) } }).sort({ t: 1 }).lean(),
+    EventRegistration.aggregate([{ $group: { _id: '$eventId', n: { $sum: 1 } } }])
+  ]);
   const byEvent = Object.fromEntries(counts.map(c => [String(c._id), c.n]));
   res.json(events.map(e => ({ ...e, registered: byEvent[String(e._id)] || 0, full: e.maxParticipants > 0 && (byEvent[String(e._id)] || 0) >= e.maxParticipants })));
 };
@@ -116,8 +124,10 @@ exports.joinWaitingList = async (req, res) => {
   res.status(201).json(row);
 };
 
+/* Only bookings made while signed in to this account. Matching on phone number
+   as well would let anyone who signs up with someone else's (unverified)
+   number see that person's bookings. */
 exports.myBookings = async (req, res) => {
-  const customer = await Customer.findById(req.customer.sub);
-  const bookings = await Booking.find({ $or: [{ customerId: req.customer.sub }, { phone: customer ? customer.phone : '__none__' }] }).sort({ t: -1 }).limit(200);
+  const bookings = await Booking.find({ customerId: req.customer.sub }).sort({ t: -1 }).limit(200);
   res.json(bookings);
 };

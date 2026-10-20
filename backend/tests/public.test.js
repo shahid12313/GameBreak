@@ -36,6 +36,20 @@ test('a customer can register, log in, and see their own bookings only', async (
   expect(mine.body[0].ref).toBe(book.body.ref);
 });
 
+test("signing up with someone else's phone number does not reveal their bookings", async () => {
+  const owner = await bootstrapOwner(app);
+  const game = await makeGame(app, owner.token, { name: 'PS5', pricePerHour: 500 });
+  const guest = await request(app).post('/api/public/bookings').send({
+    name: 'Ali Raza', phone: '0300-7770000', gameId: game._id, t: new Date(Date.now() + 3 * 3600e3).toISOString(), durationMinutes: 60
+  });
+  expect(guest.status).toBe(201);
+
+  const reg = await request(app).post('/api/customer-auth/register').send({ name: 'Snoop', email: 'snoop@test.com', phone: '0300-7770000', password: 'secret123' });
+  const mine = await request(app).get('/api/customer/bookings').set('Authorization', `Bearer ${reg.body.token}`);
+  expect(mine.status).toBe(200);
+  expect(mine.body).toEqual([]);
+});
+
 test('registering the same email twice is rejected, and wrong password is rejected', async () => {
   await request(app).post('/api/customer-auth/register').send({ name: 'A', email: 'dup@test.com', password: 'secret123' });
   const dup = await request(app).post('/api/customer-auth/register').send({ name: 'B', email: 'dup@test.com', password: 'secret123' });

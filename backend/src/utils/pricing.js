@@ -1,13 +1,20 @@
 'use strict';
 const { PricingPackage } = require('../models');
+const { localParts } = require('./localTime');
 
 /** Resolves a game's active pricing for a given date into the {method,...}
  *  shape utils/billing.js already understands, so billing.js never needs to
  *  know PricingPackage exists. Weekend-specific records (Sat/Sun) win over
  *  "all" records when both exist; otherwise "all" applies every day. */
 async function resolveGamePricing(gameId, forDate = new Date()) {
-  const isWeekend = [0, 6].includes(forDate.getDay());
   const all = await PricingPackage.find({ gameId, active: true, dayType: { $ne: 'event' } }).lean();
+  return resolveFromRows(all, forDate);
+}
+
+/** Same as resolveGamePricing, but from one game's already-loaded active
+ *  pricing rows, so a list of games can be priced with a single query. */
+function resolveFromRows(all, forDate = new Date()) {
+  const isWeekend = [0, 6].includes(localParts(forDate).day);
   const weekendSet = all.filter(p => p.dayType === 'weekend');
   const rows = isWeekend && weekendSet.length ? weekendSet : all.filter(p => p.dayType === 'all');
 
@@ -32,4 +39,12 @@ async function listGamePricing(gameId) {
   return PricingPackage.find({ gameId }).sort({ dayType: 1, kind: 1, durationMinutes: 1 });
 }
 
-module.exports = { resolveGamePricing, listGamePricing };
+/** Active (non-event) pricing rows for many games in one query, grouped by game id. */
+async function activePricingByGame() {
+  const rows = await PricingPackage.find({ active: true, dayType: { $ne: 'event' } }).lean();
+  const byGame = {};
+  rows.forEach(p => { (byGame[String(p.gameId)] ||= []).push(p); });
+  return byGame;
+}
+
+module.exports = { resolveGamePricing, resolveFromRows, activePricingByGame, listGamePricing };

@@ -10,6 +10,7 @@
    you stop — stopping early bills proportionally; running over bills
    the same rate for the extra minutes.
    --------------------------------------------------------------- */
+const { localParts } = require('./localTime');
 
 function perMinuteAmount(snap, minutesElapsed) {
   let m = Math.max(0, minutesElapsed - (snap.grace || 0));
@@ -57,13 +58,11 @@ function evaluateCode(code, { game, minutes, baseAfterGameDiscount, now }) {
   if (code.durations && code.durations.length && !code.durations.includes(minutes)) {
     return { ok: false, reason: `This code needs a ${code.durations.join('/')} min package.` };
   }
-  const d = now || new Date();
-  const ymd = d.toISOString().slice(0, 10);
+  const { ymd, hm } = localParts(now || new Date());
   if ((code.from && ymd < code.from) || (code.to && ymd > code.to)) {
     return { ok: false, reason: 'This code is outside its valid dates.' };
   }
   if (code.timeFrom && code.timeTo) {
-    const hm = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
     if (hm < code.timeFrom || hm > code.timeTo) {
       return { ok: false, reason: `This code is valid ${code.timeFrom} to ${code.timeTo} only.` };
     }
