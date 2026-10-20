@@ -1,6 +1,6 @@
 import { useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { gamePhoto, isCutout, TAGLINES } from '../assets/photos';
+import { gamePhoto, gameAccent, isCutout, TAGLINES } from '../assets/photos';
 import { fromPrice } from '../hooks/useCatalog';
 
 /* Photo card with a subtle 3D tilt that follows the pointer (mouse only). */
@@ -24,7 +24,7 @@ export default function GameCard({ game, showStations = true }) {
   }
 
   return (
-    <article ref={ref} className="gcard" onPointerMove={onMove} onPointerLeave={onLeave}>
+    <article ref={ref} className="gcard" style={{ '--ac': gameAccent(game.name) }} onPointerMove={onMove} onPointerLeave={onLeave}>
       <div className={`gcard-media${isCutout(img) ? ' cut' : ''}`}>
         <img src={img} alt={game.name} loading="lazy" />
         {price && <span className="gcard-price">{price}</span>}

@@ -3,7 +3,7 @@ import useCatalog, { money } from '../hooks/useCatalog';
 import { Loading } from '../components/LoadingState';
 import PageHeader from '../components/PageHeader';
 import Reveal from '../components/Reveal';
-import { photos, gamePhoto, isCutout } from '../assets/photos';
+import { photos, gamePhoto, gameAccent, isCutout } from '../assets/photos';
 
 export default function Pricing() {
   const catalog = useCatalog();
@@ -16,11 +16,11 @@ export default function Pricing() {
       <section className="wrap">
         {!catalog && <Loading />}
         {catalog && (
-          <div className="grid price-grid">
+          <div className="grid price-grid swipe">
             {catalog.games.map((g, k) => {
               const img = gamePhoto(g.name);
               return (
-                <Reveal className="price-card" key={g._id} delay={k * 80}>
+                <Reveal className="price-card" key={g._id} delay={k * 80} style={{ '--ac': gameAccent(g.name) }}>
                   <div className={`price-media${isCutout(img) ? ' cut' : ''}`}><img src={img} alt="" loading="lazy" /></div>
                   <div className="price-body">
                     <h3>{g.icon} {g.name}</h3>

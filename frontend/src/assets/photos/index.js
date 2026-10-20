@@ -23,6 +23,10 @@ export function gamePhoto(name = '') {
   return photos[hit ? hit[1] : 'crowd'];
 }
 
+/* Each kind of station gets its own accent colour (price pill, glow, picker). */
+const ACCENTS = { [ps5]: '#2ff5a5', [ps4]: '#4fc3f7', [sim]: '#ff8a3d', [pc]: '#a78bfa', [crowd]: '#ff4fa3' };
+export const gameAccent = name => ACCENTS[gamePhoto(name)];
+
 /* Transparent product shots float on a glow instead of being cropped. */
 export const isCutout = src => src === ps4 || src === ps5;
 

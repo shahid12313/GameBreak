@@ -1,3 +1,5 @@
+import { useEffect, useRef, useState } from 'react';
+
 /* Original animated backdrops for "coming soon" promos, drawn in SVG/CSS.
    They evoke each game's setting without using any official artwork. */
 
@@ -88,7 +90,17 @@ function Noir() {
 
 const THEMES = { vice: Vice, claws: Claws, atlantis: Atlantis, noir: Noir };
 
+/* These scenes animate constantly, so they pause whenever they are scrolled
+   out of view — otherwise they keep a phone's processor busy for nothing. */
 export default function PromoArt({ theme }) {
   const Art = THEMES[theme] || Vice;
-  return <Art />;
+  const ref = useRef(null);
+  const [visible, setVisible] = useState(true);
+  useEffect(() => {
+    if (typeof IntersectionObserver === 'undefined') return;
+    const io = new IntersectionObserver(([e]) => setVisible(e.isIntersecting));
+    io.observe(ref.current);
+    return () => io.disconnect();
+  }, []);
+  return <div ref={ref} className={`art-wrap${visible ? '' : ' paused'}`}><Art /></div>;
 }

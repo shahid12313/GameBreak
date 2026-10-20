@@ -63,9 +63,10 @@ export default function Home() {
             <h2 className="sec-title">Choose your battlestation</h2>
             <p className="sec-sub">Every setup is maintained, cleaned and ready between sessions.</p>
           </Reveal>
-          <div className="grid gcard-grid">
+          <div className="grid gcard-grid swipe">
             {games.map((g, k) => <Reveal key={g._id} delay={k * 90}><GameCard game={g} /></Reveal>)}
           </div>
+          <p className="swipe-hint" aria-hidden="true">Swipe to see all {games.length} →</p>
         </section>
       )}
 
@@ -95,7 +96,7 @@ export default function Home() {
         </section>
       )}
 
-      <section className="wrap">
+      <section className="wrap tint-violet">
         <Reveal className="sec-head center">
           <p className="eyebrow">How it works</p>
           <h2 className="sec-title">From couch to controller in 3 steps</h2>
@@ -154,7 +155,7 @@ export default function Home() {
       )}
 
       {s && (s.address || s.phone) && (
-        <section className="wrap">
+        <section className="wrap tint-blue">
           <Reveal className="sec-head center">
             <p className="eyebrow">Find us</p>
             <h2 className="sec-title">Visit {s.name}</h2>

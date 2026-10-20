@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { NavLink, Outlet, Link, useLocation } from 'react-router-dom';
 import { useCustomerAuth } from '../context/CustomerAuthContext';
-import useCatalog, { money } from '../hooks/useCatalog';
+import useCatalog, { money, waLink, telLink } from '../hooks/useCatalog';
 import api from '../services/api';
 import Ticker from '../components/Ticker';
 import { current, isOut, daysLeft } from '../content/upcoming';
@@ -94,6 +94,15 @@ export default function SiteLayout() {
         <Outlet />
       </main>
 
+      {/* Phone-only quick actions, always one tap away (hidden on the booking page itself). */}
+      {pathname !== '/book' && (
+        <nav className="mbar" aria-label="Quick actions">
+          {s?.phone && <a href={telLink(s.phone)}><span aria-hidden="true">📞</span>Call</a>}
+          <Link to="/book" className="mbar-book"><span aria-hidden="true">🎮</span>Book now</Link>
+          {s?.phone && <a href={waLink(s.phone, `Hi ${s.name || 'GameBreak'}! `)} target="_blank" rel="noopener noreferrer"><span aria-hidden="true">💬</span>WhatsApp</a>}
+        </nav>
+      )}
+
       <footer className="site-foot">
         <div className="wrap foot-grid">
           <div>
@@ -109,7 +118,7 @@ export default function SiteLayout() {
             {s?.contactName && <span>👤 {s.contactName}</span>}
             {s?.address && <span>📍 {s.address}</span>}
             {s && <span>🕙 Open daily {fmtHour(s.open)} – {fmtHour(s.close)}</span>}
-            {s?.phone && <a href={`tel:${s.phone.replace(/[^\d+]/g, '')}`}>📞 {s.phone}</a>}
+            {s?.phone && <a href={telLink(s.phone)}>📞 {s.phone}</a>}
             {s?.email && <a href={`mailto:${s.email}`}>✉️ {s.email}</a>}
             <Link to="/contact">Contact us</Link>
           </div>
